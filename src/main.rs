@@ -4,6 +4,7 @@ use barectf_parser::{
     Parser as BarectfParser, PreferredDisplayBase, PrimitiveFieldValue,
 };
 use clap::Parser as ClapParser;
+use colored::{ColoredString, Colorize};
 use std::{
     fs::{self, File},
     io::{self, BufReader},
@@ -131,7 +132,7 @@ fn print_event(event: &Event, pkt_hdr: &PacketHeader, pkt_ctx: &PacketContext) {
         let inner = pkt_ctx
             .extra_members
             .iter()
-            .map(|(n, v)| format!("{} = {}", n, fmt_fv(v)))
+            .map(|(n, v)| format!("{} = {}", n.bright_cyan(), fmt_fv(v)))
             .collect::<Vec<String>>()
             .join(", ");
         format!("{{ {} }}", inner)
@@ -143,7 +144,7 @@ fn print_event(event: &Event, pkt_hdr: &PacketHeader, pkt_ctx: &PacketContext) {
         let inner = event
             .common_context
             .iter()
-            .map(|(n, v)| format!("{} = {}", n, fmt_fv(v)))
+            .map(|(n, v)| format!("{} = {}", n.bright_cyan(), fmt_fv(v)))
             .collect::<Vec<String>>()
             .join(", ");
         format!("{{ {} }}", inner)
@@ -155,7 +156,7 @@ fn print_event(event: &Event, pkt_hdr: &PacketHeader, pkt_ctx: &PacketContext) {
         let inner = event
             .specific_context
             .iter()
-            .map(|(n, v)| format!("{} = {}", n, fmt_fv(v)))
+            .map(|(n, v)| format!("{} = {}", n.bright_cyan(), fmt_fv(v)))
             .collect::<Vec<String>>()
             .join(", ");
         format!("{{ {} }}", inner)
@@ -167,7 +168,7 @@ fn print_event(event: &Event, pkt_hdr: &PacketHeader, pkt_ctx: &PacketContext) {
         let inner = event
             .payload
             .iter()
-            .map(|(n, v)| format!("{} = {}", n, fmt_fv(v)))
+            .map(|(n, v)| format!("{} = {}", n.bright_cyan(), fmt_fv(v)))
             .collect::<Vec<String>>()
             .join(", ");
         format!("{{ {} }}", inner)
@@ -179,13 +180,17 @@ fn print_event(event: &Event, pkt_hdr: &PacketHeader, pkt_ctx: &PacketContext) {
         .collect::<Vec<String>>()
         .join(", ");
 
-    print!("[{:016}]", event.timestamp);
-    print!(" {} @ {}:", event.name, pkt_hdr.stream_name);
+    print!("[{}]", format!("{:016}", event.timestamp).bright_yellow());
+    print!(
+        " {} @ {}:",
+        event.name.to_string().bright_magenta(),
+        pkt_hdr.stream_name.to_string().red(),
+    );
     print!(" {}", content);
     println!();
 }
 
-fn fmt_fv(fv: &FieldValue) -> String {
+fn fmt_fv(fv: &FieldValue) -> ColoredString {
     match fv {
         FieldValue::Primitive(p) => fmt_pfv(p),
         FieldValue::Array(arr) => {
@@ -195,39 +200,39 @@ fn fmt_fv(fv: &FieldValue) -> String {
                 .map(|(idx, pfv)| format!("[{}] = {}", idx, fmt_pfv(pfv)))
                 .collect::<Vec<String>>()
                 .join(", ");
-            format!("[ {} ]", inner)
+            format!("[ {} ]", inner).into()
         }
     }
 }
 
-fn fmt_pfv(pfv: &PrimitiveFieldValue) -> String {
+fn fmt_pfv(pfv: &PrimitiveFieldValue) -> ColoredString {
     match pfv {
         PrimitiveFieldValue::UnsignedInteger(v, pdb) => match pdb {
-            PreferredDisplayBase::Binary => format!("{v:#b}"),
-            PreferredDisplayBase::Octal => format!("{v:#o}"),
-            PreferredDisplayBase::Decimal => format!("{v}"),
-            PreferredDisplayBase::Hexadecimal => format!("{v:#X}"),
+            PreferredDisplayBase::Binary => format!("{v:#b}").bold(),
+            PreferredDisplayBase::Octal => format!("{v:#o}").bold(),
+            PreferredDisplayBase::Decimal => format!("{v}").bold(),
+            PreferredDisplayBase::Hexadecimal => format!("{v:#X}").bold(),
         },
         PrimitiveFieldValue::SignedInteger(v, pdb) => match pdb {
-            PreferredDisplayBase::Binary => format!("{v:#b}"),
-            PreferredDisplayBase::Octal => format!("{v:#o}"),
-            PreferredDisplayBase::Decimal => format!("{v}"),
-            PreferredDisplayBase::Hexadecimal => format!("{v:#X}"),
+            PreferredDisplayBase::Binary => format!("{v:#b}").bold(),
+            PreferredDisplayBase::Octal => format!("{v:#o}").bold(),
+            PreferredDisplayBase::Decimal => format!("{v}").bold(),
+            PreferredDisplayBase::Hexadecimal => format!("{v:#X}").bold(),
         },
-        PrimitiveFieldValue::String(v) => format!("\"{v}\""),
-        PrimitiveFieldValue::F32(v) => format!("{:03}", v.0),
-        PrimitiveFieldValue::F64(v) => format!("{:03}", v.0),
+        PrimitiveFieldValue::String(v) => format!("\"{v}\"").bold(),
+        PrimitiveFieldValue::F32(v) => format!("{:03}", v.0).bold(),
+        PrimitiveFieldValue::F64(v) => format!("{:03}", v.0).bold(),
         PrimitiveFieldValue::Enumeration(v, pdb, maybe_label) => {
             let container = match pdb {
-                PreferredDisplayBase::Binary => format!("{v:#b}"),
-                PreferredDisplayBase::Octal => format!("{v:#o}"),
-                PreferredDisplayBase::Decimal => format!("{v}"),
-                PreferredDisplayBase::Hexadecimal => format!("{v:#X}"),
+                PreferredDisplayBase::Binary => format!("{v:#b}").bold(),
+                PreferredDisplayBase::Octal => format!("{v:#o}").bold(),
+                PreferredDisplayBase::Decimal => format!("{v}").bold(),
+                PreferredDisplayBase::Hexadecimal => format!("{v:#X}").bold(),
             };
             if let Some(label) = maybe_label {
-                format!("( \"{label}\" : container = {container} )")
+                format!("( \"{}\" : container = {} )", label.bold(), container).into()
             } else {
-                format!("( container = {container} )")
+                format!("( container = {container} )").into()
             }
         }
     }
